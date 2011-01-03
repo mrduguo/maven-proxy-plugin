@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+	license agreements. See the NOTICE file distributed with this work for additional 
+	information regarding copyright ownership. The ASF licenses this file to 
+	you under the Apache License, Version 2.0 (the "License"); you may not use 
+	this file except in compliance with the License. You may obtain a copy of 
+	the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+	by applicable law or agreed to in writing, software distributed under the 
+	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+	OF ANY KIND, either express or implied. See the License for the specific 
+	language governing permissions and limitations under the License. -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.duguo.maven.plugins.proxy.samples</groupId>
+	<artifactId>local-http-proxy</artifactId>
+	<version>0.6.0</version>
+
+	<build>
+		<defaultGoal>validate</defaultGoal>
+		<plugins>
+			<plugin>
+				<groupId>org.duguo.maven.plugins</groupId>
+				<artifactId>maven-proxy-plugin</artifactId>
+				<version>0.6.0</version>
+				<executions>
+				 <execution>
+                   <phase>validate</phase>
+				   <goals>
+					 <goal>repomaven</goal>
+				   </goals>
+				 </execution>
+				</executions>
+				<configuration>
+					<virtualRepositories>
+					  <virtualRepository>
+						  <requestPrefix>/releases</requestPrefix>
+						  <storageBase>${basedir}/target/repos/releases</storageBase>
+						  <downloadRepositories>
+							<downloadRepository>
+							  <id>central</id>
+							  <url>http://repo1.maven.org/maven2</url>
+							</downloadRepository>
+						  </downloadRepositories>
+					  </virtualRepository>
+					  <virtualRepository>
+						  <requestPrefix>/plugins</requestPrefix>
+						  <storageBase>${basedir}/target/repos/plugins</storageBase>
+						  <downloadRepositories>
+							<downloadRepository>
+							  <id>central</id>
+							  <url>http://repo1.maven.org/maven2</url>
+							</downloadRepository>
+						  </downloadRepositories>
+					  </virtualRepository>
+					</virtualRepositories>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
