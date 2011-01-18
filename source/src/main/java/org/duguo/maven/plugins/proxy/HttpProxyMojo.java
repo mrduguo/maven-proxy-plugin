@@ -87,6 +87,20 @@ public class HttpProxyMojo extends AbstractMojo {
 	protected int port;
 
 	/**
+	 * Context path to be invoked to stop the server. By default, it's disabled
+	 * 
+	 * @parameter expression="${stopPath}"
+	 */
+	protected String stopPath;
+
+	/**
+	 * Stop the server automatically after a number of seconds.
+	 * 
+	 * @parameter expression="${stopAfter}" default-value="-1"
+	 */
+	protected long stopAfter;
+
+	/**
 	 * Releases repository storage base
 	 * 
 	 * @parameter expression="${doNotCopyLocalRepoFile}" default-value="false"
@@ -115,33 +129,35 @@ public class HttpProxyMojo extends AbstractMojo {
 	 * @parameter expression="${virtualRepositories}" 
 	 */
 	protected List<VirtualRepository> virtualRepositories;
+	
+	private Server httpServer;
 
 	public void execute() throws MojoExecutionException {
 		validateConfiguration();
 		try {
-			System.out.println("proxy starting");
-			Server server = new Server(new InetSocketAddress(hostname, port));
+			httpServer = new Server(new InetSocketAddress(hostname, port));
 			ContextHandler context = new ContextHandler();
 			context.setContextPath("/");
 			context.setResourceBase(".");
 			context.setClassLoader(Thread.currentThread()
 					.getContextClassLoader());
-			server.setHandler(context);
+			httpServer.setHandler(context);
 			context.setHandler(new DownloadRequestHandler(this));
 
-			server.start();
-			System.out.println("proxy started");
-			// server.join();
+			getLog().info("starting proxy");
+			httpServer.start();
+			getLog().info("started proxy");
 
-		} catch (Exception e) {
-			throw new MojoExecutionException(e.getMessage(), e);
-		}
+			if(stopAfter>0){
+				getLog().debug("sleeping for "+stopAfter+" seconds");
+				Thread.sleep(stopAfter*1000);
+				getLog().debug("slept "+stopAfter+" seconds");
+			}else if(stopPath==null || stopPath.length()==0){
+				getLog().debug("blocking thread to avoid mojo exit");
+				httpServer.join();
+			}
+			getLog().debug("mojo exited, proxy will running until java process end");
 
-		try {
-			// server.join();
-
-			Thread.sleep(1000000);
-			System.out.println("proxy stoping");
 
 		} catch (Exception e) {
 			throw new MojoExecutionException(e.getMessage(), e);
@@ -155,6 +171,14 @@ public class HttpProxyMojo extends AbstractMojo {
 	}
 
 	public File resolveArtifact(String requestPath) throws IOException {
+		if(stopPath!=null && stopPath.equals(requestPath)){
+			try {
+				httpServer.stop();
+			} catch (Exception e) {
+				getLog().error("failed to stop http server",e);
+			}
+			return null;
+		}
 		for(VirtualRepository virtualRepository:virtualRepositories){
 			if (requestPath.startsWith(virtualRepository.getRequestPrefix())) {
 				return downloadResource(virtualRepository,requestPath.substring(virtualRepository.getRequestPrefix().length()));
@@ -342,7 +366,7 @@ public class HttpProxyMojo extends AbstractMojo {
 							return destination;
 						}
 					} catch (Exception e) {
-						getLog().warn("Download artifact ["+artifactPath+"] failed: "+e.getMessage());
+						getLog().warn("Download artifact ["+artifactPath+"] failed: "+e.getMessage(),e);
 					}
 				}
 				
